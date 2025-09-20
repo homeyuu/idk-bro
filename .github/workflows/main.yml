@@ -1,0 +1,100 @@
+name: RDP
+
+on:
+  workflow_dispatch:
+
+jobs:
+  secure-rdp:
+    runs-on: windows-latest
+    timeout-minutes: 3600
+
+    steps:
+      - name: Configure Core RDP Settings
+        run: |
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' `
+                             -Name "fDenyTSConnections" -Value 0 -Force
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' `
+                             -Name "UserAuthentication" -Value 0 -Force
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' `
+                             -Name "SecurityLayer" -Value 0 -Force
+
+          netsh advfirewall firewall delete rule name="RDP-Tailscale" 2>&1 | Out-Null
+          netsh advfirewall firewall add rule name="RDP-Tailscale" `
+            dir=in action=allow protocol=TCP localport=3389
+
+          try {
+            Restart-Service -Name TermService -Force -ErrorAction Stop
+          } catch {
+            Write-Warning "Service restart failed but continuing: $($_.Exception.Message)"
+          }
+
+      - name: Create RDP User with Secure Password
+        run: |
+          $charSet = @{
+              Upper   = [char[]](65..90)
+              Lower   = [char[]](97..122)
+              Number  = [char[]](48..57)
+              Special = [char[]]('!@#$%^&*'.ToCharArray())
+          }
+          $rawPassword = @()
+          $rawPassword += $charSet.Upper | Get-Random -Count 3
+          $rawPassword += $charSet.Lower | Get-Random -Count 3
+          $rawPassword += $charSet.Number | Get-Random -Count 3
+          $rawPassword += $charSet.Special | Get-Random -Count 3
+          $password = -join ($rawPassword | Sort-Object { Get-Random })
+          $securePass = ConvertTo-SecureString $password -AsPlainText -Force
+          
+          # Sử dụng username "kazugay" theo yêu cầu
+          New-LocalUser -Name "kazugay" -Password $securePass -AccountNeverExpires
+          Add-LocalGroupMember -Group "Administrators" -Member "kazugay"
+          Add-LocalGroupMember -Group "Remote Desktop Users" -Member "kazugay"
+         
+          echo "RDP_CREDS=User: kazugay | Password: $password" >> $env:GITHUB_ENV
+
+      - name: Install Tailscale
+        run: |
+          $tsUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-latest-amd64.msi"
+          $installerPath = "$env:TEMP\tailscale.msi"
+          Invoke-WebRequest -Uri $tsUrl -OutFile $installerPath
+          Start-Process msiexec.exe -ArgumentList "/i", "`"$installerPath`"", "/quiet", "/norestart" -Wait
+          Remove-Item $installerPath -Force
+
+      - name: Establish Tailscale Connection
+        run: |
+          & "$env:ProgramFiles\Tailscale\tailscale.exe" up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --hostname=gh-runner-$env:GITHUB_RUN_ID
+          
+          $tsIP = $null
+          $retries = 0
+          while (-not $tsIP -and $retries -lt 10) {
+              $tsIP = & "$env:ProgramFiles\Tailscale\tailscale.exe" ip -4
+              Start-Sleep -Seconds 5
+              $retries++
+          }
+          
+          if (-not $tsIP) {
+              Write-Error "Tailscale IP not assigned. Exiting."
+              exit 1
+          }
+          echo "TAILSCALE_IP=$tsIP" >> $env:GITHUB_ENV
+
+      - name: Display Connection Information
+        run: |
+          Write-Host "`n=== RDP ACCESS ==="
+          Write-Host "Tailscale IP: $env:TAILSCALE_IP"
+          Write-Host "Username: kazugay"
+          Write-Host "Password: $(echo $env:RDP_CREDS | ForEach-Object { $_.Split('|')[-1].Trim() })"
+          Write-Host "==================`n"
+          Write-Host "Để kết nối:"
+          Write-Host "1. Cài đặt Tailscale trên máy của bạn"
+          Write-Host "2. Đăng nhập cùng tài khoản với Auth Key đã dùng"
+          Write-Host "3. Kết nối RDP đến địa chỉ IP trên"
+
+      - name: Maintain Connection
+        run: |
+          while ($true) {
+            Write-Host "[$(Get-Date)] RDP Active - Sử dụng Ctrl+C trong workflow để kết thúc"
+            Write-Host "IP: $env:TAILSCALE_IP"
+            Write-Host "User: kazugay"
+            Write-Host "Password: $(echo $env:RDP_CREDS | ForEach-Object { $_.Split('|')[-1].Trim() })"
+            Start-Sleep -Seconds 300
+          }
