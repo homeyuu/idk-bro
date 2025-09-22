@@ -23,6 +23,11 @@ jobs:
             -p 3389:3389 \
             ghcr.io/${{ github.repository_owner }}/ubuntu-mate-rdp:latest
 
+      - name: Check XRDP port
+        run: |
+          sleep 5
+          docker exec mydesktop ss -tlnp | grep 3389 || (echo "XRDP not running!" && exit 1)
+
       - name: Install & connect Tailscale
         env:
           TAILSCALE_AUTH_KEY: ${{ secrets.TAILSCALE_AUTH_KEY }}
@@ -30,11 +35,11 @@ jobs:
           curl -fsSL https://tailscale.com/install.sh | sh
           sudo tailscale up --authkey=${TAILSCALE_AUTH_KEY} --hostname=rdp-${{ github.run_id }}
           TS_IP=$(tailscale ip -4)
+          echo "==== SESSION ACTIVE ===="
           echo "Tailscale IP: $TS_IP"
           echo "User: yuu"
           echo "Pass: lt4c2025"
 
       - name: Keep alive
         run: |
-          echo "==== SESSION ACTIVE ===="
           while true; do sleep 300; done
