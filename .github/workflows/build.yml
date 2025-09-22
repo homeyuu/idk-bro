@@ -1,66 +1,30 @@
-name: ubuntu-rdp
+name: Build and Push Docker image
 
 on:
   workflow_dispatch:
+  push:
+    branches: ["main"]
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 360
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup user yuu + sudoer
-        run: |
-          PASS="lt4c2025"
-          sudo useradd -m -s /bin/bash yuu
-          echo "yuu:$PASS" | sudo chpasswd
-          sudo usermod -aG sudo yuu
-          echo "yuu ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/yuu
-          echo "CI_USER=yuu" >> $GITHUB_ENV
-          echo "CI_PASS=$PASS" >> $GITHUB_ENV
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install desktop + apps
-        run: |
-          sudo apt-get update -qq
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
-            ubuntu-mate-desktop xrdp kitty ccache \
-            git curl wget unzip build-essential python3 python3-pip cmake ninja-build
-
-          # Brave
-          sudo curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
-          echo "deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main" \
-            | sudo tee /etc/apt/sources.list.d/brave-browser-release.list >/dev/null
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq brave-browser
-
-          # Discord
-          wget -q -O discord.deb "https://discord.com/api/download?platform=linux&format=deb"
-          sudo apt-get install -y -qq ./discord.deb || sudo apt-get install -f -y -qq
-          rm -f discord.deb
-
-      - name: Setup Tailscale
-        env:
-          TAILSCALE_AUTH_KEY: ${{ secrets.TAILSCALE_AUTH_KEY }}
-        run: |
-          curl -fsSL https://tailscale.com/install.sh | sh
-          sudo tailscale up --authkey=${TAILSCALE_AUTH_KEY} --hostname=ci-${{ github.run_id }}
-          TS_IP=$(tailscale ip -4)
-          echo "TS_IP=$TS_IP" >> $GITHUB_ENV
-
-      - name: Configure RDP
-        run: |
-          echo "mate-session" | sudo tee -a /home/yuu/.xsession
-          sudo systemctl enable xrdp
-          sudo systemctl start xrdp
-
-      - name: Keep alive
-        run: |
-          echo "==== SESSION ACTIVE ===="
-          echo "Tailscale IP: $TS_IP"
-          echo "Port: 3389 (RDP)"
-          echo "Username: $CI_USER"
-          echo "Password: $CI_PASS"
-          echo "========================"
-          while true; do sleep 300; done
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/ubuntu-mate-rdp:latest
