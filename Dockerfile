@@ -6,7 +6,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
 
 # Cài desktop + XRDP + tiện ích
 RUN apt-get update -qq && \
-    apt-get install -y -qq ubuntu-mate-desktop xrdp sudo curl wget git unzip build-essential \
+    apt-get install -y -qq ubuntu-mate-desktop xrdp supervisor sudo curl wget git unzip build-essential \
     python3 python3-pip cmake ninja-build kitty && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
@@ -32,8 +32,10 @@ RUN wget -q -O /tmp/discord.deb "https://discord.com/api/download?platform=linux
 RUN echo "mate-session" > /home/$USERNAME/.xsession && \
     chown $USERNAME:$USERNAME /home/$USERNAME/.xsession
 
-# Expose RDP port
+# Supervisord config
+RUN mkdir -p /var/log/supervisor
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
 EXPOSE 3389
 
-# Start XRDP trực tiếp, không dùng systemd/service
-CMD /usr/sbin/xrdp-sesman & /usr/sbin/xrdp -n
+CMD ["/usr/bin/supervisord", "-n"]
