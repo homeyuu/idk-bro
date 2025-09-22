@@ -11,19 +11,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup user yuu
+      - name: Setup user yuu + sudoer
         run: |
           PASS="lt4c2025"
           sudo useradd -m -s /bin/bash yuu
           echo "yuu:$PASS" | sudo chpasswd
+          sudo usermod -aG sudo yuu
+          echo "yuu ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/yuu
           echo "CI_USER=yuu" >> $GITHUB_ENV
           echo "CI_PASS=$PASS" >> $GITHUB_ENV
 
       - name: Install desktop + apps
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq \
-            lxde xrdp kitty ccache \
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
+            ubuntu-mate-desktop xrdp kitty ccache \
             git curl wget unzip build-essential python3 python3-pip cmake ninja-build
 
           # Brave
@@ -49,7 +51,7 @@ jobs:
 
       - name: Configure RDP
         run: |
-          echo "startlxde" | sudo tee -a /home/yuu/.xsession
+          echo "mate-session" | sudo tee -a /home/yuu/.xsession
           sudo systemctl enable xrdp
           sudo systemctl start xrdp
 
