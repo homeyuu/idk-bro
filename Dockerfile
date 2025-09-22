@@ -7,7 +7,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
 # Cài desktop + XRDP + tiện ích
 RUN apt-get update -qq && \
     apt-get install -y -qq ubuntu-mate-desktop xrdp supervisor sudo curl wget git unzip build-essential \
-    python3 python3-pip cmake ninja-build kitty && \
+    python3 python3-pip cmake ninja-build kitty dbus-x11 pulseaudio && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Tạo user + sudoer
