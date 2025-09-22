@@ -34,5 +34,5 @@ RUN echo "mate-session" > /home/$USERNAME/.xsession && \
 
 EXPOSE 3389
 
-# Start xrdp trực tiếp
-CMD ["/usr/sbin/xrdp", "--nodaemon"]
+# Start sesman trước, rồi tới xrdp
+CMD ["/bin/sh", "-c", "/usr/sbin/xrdp-sesman --nodaemon & exec /usr/sbin/xrdp --nodaemon"]
