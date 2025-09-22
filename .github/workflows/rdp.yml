@@ -1,4 +1,4 @@
-name: Build & Run RDP
+name: Build & Run RDP (rdp-v1)
 
 on:
   workflow_dispatch:
@@ -21,7 +21,7 @@ jobs:
 
       - name: Build & push image (no cache)
         run: |
-          IMAGE=ghcr.io/${{ github.repository_owner }}/ubuntu-mate-rdp:latest
+          IMAGE=ghcr.io/${{ github.repository_owner }}/ubuntu-mate-rdp:rdp-v1
           docker build --no-cache -t $IMAGE .
           docker push $IMAGE
 
@@ -30,7 +30,7 @@ jobs:
           docker run -d \
             --name mydesktop \
             -p 3389:3389 \
-            ghcr.io/${{ github.repository_owner }}/ubuntu-mate-rdp:latest
+            ghcr.io/${{ github.repository_owner }}/ubuntu-mate-rdp:rdp-v1
 
       - name: Check XRDP port
         run: |
