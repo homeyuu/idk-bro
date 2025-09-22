@@ -35,8 +35,5 @@ RUN echo "mate-session" > /home/$USERNAME/.xsession && \
 # Expose RDP port
 EXPOSE 3389
 
-# Start xrdp services automatically
-CMD service dbus start && \
-    service xrdp-sesman start && \
-    service xrdp start && \
-    tail -f /var/log/xrdp-sesman.log
+# Start XRDP trực tiếp, không dùng systemd/service
+CMD /usr/sbin/xrdp-sesman & /usr/sbin/xrdp -n
