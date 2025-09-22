@@ -4,6 +4,9 @@ ENV DEBIAN_FRONTEND=noninteractive \
     USERNAME=yuu \
     PASSWORD=lt4c2025
 
+# Debug marker để chắc chắn image mới
+RUN echo ">>> BUILD TIME: $(date)" > /build-info.txt
+
 # Cài desktop + XRDP + tiện ích
 RUN apt-get update -qq && \
     apt-get install -y -qq ubuntu-mate-desktop xrdp sudo curl wget git unzip build-essential \
