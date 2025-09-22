@@ -1,4 +1,4 @@
-name: RDP from GHCR
+name: Build & Run RDP
 
 on:
   workflow_dispatch:
@@ -19,10 +19,10 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build & push image
+      - name: Build & push image (no cache)
         run: |
-          IMAGE=ghcr.io/${{ github.repository_owner }}/ubuntu-mate-rdp:test
-          docker build -t $IMAGE .
+          IMAGE=ghcr.io/${{ github.repository_owner }}/ubuntu-mate-rdp:latest
+          docker build --no-cache -t $IMAGE .
           docker push $IMAGE
 
       - name: Run desktop container
@@ -30,7 +30,7 @@ jobs:
           docker run -d \
             --name mydesktop \
             -p 3389:3389 \
-            ghcr.io/${{ github.repository_owner }}/ubuntu-mate-rdp:test
+            ghcr.io/${{ github.repository_owner }}/ubuntu-mate-rdp:latest
 
       - name: Check XRDP port
         run: |
