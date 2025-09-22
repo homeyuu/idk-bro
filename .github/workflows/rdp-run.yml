@@ -1,4 +1,4 @@
-name: Run RDP (no build)
+name: Run RDP (rdp-v1, no build)
 
 on:
   workflow_dispatch:
@@ -16,16 +16,16 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Pull latest image
+      - name: Pull image
         run: |
-          docker pull ghcr.io/${{ github.repository_owner }}/ubuntu-mate-rdp:latest
+          docker pull ghcr.io/${{ github.repository_owner }}/ubuntu-mate-rdp:rdp-v1
 
       - name: Run desktop container
         run: |
           docker run -d \
             --name mydesktop \
             -p 3389:3389 \
-            ghcr.io/${{ github.repository_owner }}/ubuntu-mate-rdp:latest
+            ghcr.io/${{ github.repository_owner }}/ubuntu-mate-rdp:rdp-v1
 
       - name: Check XRDP port
         run: |
