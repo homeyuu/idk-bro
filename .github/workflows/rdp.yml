@@ -25,8 +25,12 @@ jobs:
 
       - name: Check XRDP port
         run: |
-          sleep 5
-          docker exec mydesktop ss -tlnp | grep 3389 || (echo "XRDP not running!" && exit 1)
+          sleep 8
+          if ! docker exec mydesktop ss -tlnp | grep -q 3389; then
+            echo "XRDP not running!"
+            docker logs mydesktop || true
+            exit 1
+          fi
 
       - name: Install & connect Tailscale
         env:
@@ -43,3 +47,7 @@ jobs:
       - name: Keep alive
         run: |
           while true; do sleep 300; done
+
+      - name: Show container logs on fail
+        if: failure()
+        run: docker logs mydesktop || true
