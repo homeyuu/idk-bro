@@ -16,9 +16,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Pull latest image (fresh)
+      - name: Pull latest image
         run: |
-          docker pull --quiet --disable-content-trust=false ghcr.io/${{ github.repository_owner }}/ubuntu-mate-rdp:latest
+          docker pull ghcr.io/${{ github.repository_owner }}/ubuntu-mate-rdp:latest
 
       - name: Run desktop container
         run: |
