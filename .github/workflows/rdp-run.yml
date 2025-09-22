@@ -1,4 +1,4 @@
-name: Run RDP from GHCR (no build)
+name: Run RDP (no build)
 
 on:
   workflow_dispatch:
@@ -16,9 +16,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Pull image
+      - name: Pull latest image (fresh)
         run: |
-          docker pull ghcr.io/${{ github.repository_owner }}/ubuntu-mate-rdp:latest
+          docker pull --quiet --disable-content-trust=false ghcr.io/${{ github.repository_owner }}/ubuntu-mate-rdp:latest
 
       - name: Run desktop container
         run: |
