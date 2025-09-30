@@ -6,7 +6,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 350 # Giới hạn thời gian chạy máy ảo (tối đa ~6 tiếng)
+    timeout-minutes: 350
     
     steps:
       - name: Checkout
@@ -25,6 +25,10 @@ jobs:
 
       - name: 2. Cài đặt XRDP và fix lỗi âm thanh (Pulse Audio)
         run: |
+          # BƯỚC MỚI: Bật kho mã nguồn (deb-src) và cập nhật
+          sudo sed -i -- 's/# deb-src/deb-src/g' /etc/apt/sources.list
+          sudo apt-get update
+          
           # Cài đặt XRDP
           sudo apt-get install -y xrdp
           
