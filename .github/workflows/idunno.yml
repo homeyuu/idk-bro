@@ -25,8 +25,10 @@ jobs:
 
       - name: 2. Cài đặt XRDP và fix lỗi âm thanh (Pulse Audio)
         run: |
-          # BƯỚC MỚI: Bật kho mã nguồn (deb-src) và cập nhật
-          sudo sed -i -- 's/# deb-src/deb-src/g' /etc/apt/sources.list
+          # PHƯƠNG PHÁP MỚI: Tự động tạo và thêm kho mã nguồn (deb-src) một cách an toàn
+          # Cách này đảm bảo hoạt động trên mọi phiên bản máy ảo của Github
+          sudo apt-get update
+          grep 'deb http' /etc/apt/sources.list | sed 's/^deb/deb-src/' | sudo tee -a /etc/apt/sources.list.d/sources.list
           sudo apt-get update
           
           # Cài đặt XRDP
