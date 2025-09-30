@@ -28,11 +28,23 @@ jobs:
           # Cài đặt XRDP
           sudo apt-get install -y xrdp
           
-          # Fix lỗi âm thanh bằng cách build module PulseAudio cho XRDP
+          # Cài các gói cần thiết để build
           sudo apt-get install -y git libpulse-dev autoconf m4 intltool build-essential dpkg-dev libtool libsndfile-dev libspeexdsp-dev
+          
+          # Di chuyển vào thư mục /tmp để làm việc
           cd /tmp
+          
+          # Tải mã nguồn của PulseAudio để build module
+          sudo apt-get source pulseaudio
+          
+          # Clone repo chứa module âm thanh
           git clone https://github.com/neutrinolabs/pulseaudio-module-xrdp.git
           cd pulseaudio-module-xrdp
+          
+          # Trỏ biến môi trường PULSE_DIR vào thư mục mã nguồn
+          export PULSE_DIR=$(ls -d /tmp/pulseaudio-*/)
+          
+          # Tiến hành build và cài đặt
           ./bootstrap
           ./configure
           make
